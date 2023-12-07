@@ -1,5 +1,11 @@
 class DNATokenizer:
-    def __init__(self, vocab_size: int, k: int = 1, pad_token: str = "<PAD>", unk_token: str = "<UNK>"):
+    def __init__(
+        self,
+        vocab_size: int,
+        k: int = 1,
+        pad_token: str = "<PAD>",
+        unk_token: str = "<UNK>",
+    ):
         self.vocab_size = vocab_size
         self.k = k
         self.pad_token = pad_token

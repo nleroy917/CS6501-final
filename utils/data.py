@@ -4,10 +4,12 @@ import torch
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_packed_sequence
 
+
 class DNADataset(Dataset):
     """
     Dataset class for DNA sequences.
     """
+
     def __init__(self, seqs: list, labels: list):
         """
         Initialize the dataset.
@@ -17,7 +19,6 @@ class DNADataset(Dataset):
         """
         self.seqs = seqs
         self.labels = labels
-        
 
     def __len__(self) -> int:
         """
@@ -33,7 +34,10 @@ class DNADataset(Dataset):
         """
         return torch.tensor(self.seqs[idx]), torch.tensor(self.labels[idx])
 
-def collate_fn(batch: list[tuple[torch.Tensor, torch.Tensor]], pad_token_id: int) -> tuple[torch.Tensor, torch.Tensor]:
+
+def collate_fn(
+    batch: list[tuple[torch.Tensor, torch.Tensor]], pad_token_id: int
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Collate function for the dataset.
 
@@ -50,7 +54,7 @@ def load_data(path: str) -> tuple[list[str], list[int]]:
 
     :param path: path to the data file
     """
-    
+
     df = pd.read_csv(path)
     seqs = [str(seq) for seq in df["sequence"].tolist()]
     labels = [int(label) for label in df["label"].tolist()]
