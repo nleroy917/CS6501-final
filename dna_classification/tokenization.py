@@ -11,7 +11,7 @@ class DNATokenizer:
         self.pad_token = pad_token
         self.unk_token = unk_token
         self.token_to_id = {}
-    
+
     @classmethod
     def from_pretrained(cls, path: str) -> "DNATokenizer":
         """
@@ -32,7 +32,6 @@ class DNATokenizer:
         tokenizer.token_to_id = {mer: i for i, mer in enumerate(mers)}
 
         return tokenizer
-
 
     def tokenize(self, sequence: str) -> list[int]:
         """
