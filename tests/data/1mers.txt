@@ -2,4 +2,3 @@ A
 T
 G
 C
-<pad>

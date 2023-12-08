@@ -1,16 +1,39 @@
+from typing import Union
+
+from .const import PAD_TOKEN
+
 class DNATokenizer:
     def __init__(
         self,
-        vocab_size: int,
-        k: int = 1,
-        pad_token: str = "<pad>",
-        unk_token: str = "<unk>",
+        vocab: Union[str, dict[str, int]],
     ):
-        self.vocab_size = vocab_size
-        self.k = k
-        self.pad_token = pad_token
-        self.unk_token = unk_token
-        self.token_to_id = {}
+        """
+        Initialize the tokenizer.
+
+        :param vocab: vocabulary file or dictionary
+        """
+        self._init_tokenizer(vocab)
+    
+    def _init_tokenizer(self, vocab: Union[str, dict[str, int]]):
+        """
+        Initialize the tokenizer.
+
+        :param vocab: vocabulary file or dictionary
+        """
+        if isinstance(vocab, str):
+            with open(vocab, "r") as f:
+                vocab = f.read().splitlines()
+            vocab = {mer: i for i, mer in enumerate(vocab)}
+        elif isinstance(vocab, dict):
+            vocab = vocab
+        
+        # add the pad token if it's not in the vocab
+        if PAD_TOKEN not in vocab:
+            vocab[PAD_TOKEN] = len(vocab)
+
+        self.token_to_id = vocab
+        self.vocab_size = len(vocab)
+        self.k = len(list(vocab.keys())[0])
 
     @classmethod
     def from_pretrained(cls, path: str) -> "DNATokenizer":
@@ -24,14 +47,14 @@ class DNATokenizer:
         # read in the mers
         with open(path, "r") as f:
             mers = f.read().splitlines()
+        
+        # create the vocab
+        vocab = {mer: i for i, mer in enumerate(mers)}
 
-        # initialize the tokenizer
-        vocab_size = len(mers)
-        k = len(mers[0])
-        tokenizer = cls(vocab_size, k)
-        tokenizer.token_to_id = {mer: i for i, mer in enumerate(mers)}
-
+        tokenizer = cls(vocab)
+        
         return tokenizer
+        
 
     def tokenize(self, sequence: str ) -> list[int]:
         """
@@ -48,7 +71,6 @@ class DNATokenizer:
             ids.append(self.token_to_id[token])
         
         return ids
-
 
 
     def tokenize_batch(self, batch: list[str]) -> list[list[int]]:

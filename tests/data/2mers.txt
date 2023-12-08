@@ -14,4 +14,3 @@ CA
 CT
 CG
 CC
-<pad>

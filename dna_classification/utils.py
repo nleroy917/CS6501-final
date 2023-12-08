@@ -1,6 +1,10 @@
 import torch
+import pandas as pd
+
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_packed_sequence
+
+from .const import DATA_FILE_DELIMITER
 
 
 def collate_fn(
@@ -21,8 +25,10 @@ def build_vocab(path: str, k: int = 1) -> dict:
 
     :param path: path to the data file
     :param k: k-mer size
+
+    :return: vocabulary
     """
-    pass
+    df = pd.read_csv(path, sep=DATA_FILE_DELIMITER, header=None)
 
 
 class DNASequenceDataset(Dataset):
