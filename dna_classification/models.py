@@ -1,5 +1,7 @@
 import os
 
+from .tokenization import DNATokenizer
+
 import torch
 import torch.nn as nn
 
@@ -13,6 +15,7 @@ class DNASequenceClassifier(nn.Module):
     def __init__(
         self,
         model_path: str = None,
+        tokenizer: DNATokenizer = None,
         vocab_size: int = None,
         embedding_dim: int = None,
         hidden_dim: int = None,
@@ -32,7 +35,7 @@ class DNASequenceClassifier(nn.Module):
             self.tokenizer = None
         else:
             self._init_model(
-                vocab_size, embedding_dim, hidden_dim, num_layers, num_classes, dropout
+                tokenizer, vocab_size, embedding_dim, hidden_dim, num_layers, num_classes, dropout
             )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -92,6 +95,7 @@ class DNASequenceClassifier(nn.Module):
 
         # get model config from yaml
         self._init_model(
+            DNATokenizer.from_pretrained(vocab_file_path),
             config["vocab_size"],
             config["embedding_dim"],
             config["hidden_dim"],
@@ -105,6 +109,7 @@ class DNASequenceClassifier(nn.Module):
 
     def _init_model(
         self,
+        tokenizer: DNATokenizer,
         vocab_size: int,
         embedding_dim: int,
         hidden_dim: int,
@@ -113,6 +118,7 @@ class DNASequenceClassifier(nn.Module):
         dropout: float,
     ):
         # class params
+        self.tokenizer = tokenizer
         self.vocab_size = vocab_size
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers

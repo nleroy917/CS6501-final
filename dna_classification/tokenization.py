@@ -3,13 +3,36 @@ class DNATokenizer:
         self,
         vocab_size: int,
         k: int = 1,
-        pad_token: str = "<PAD>",
-        unk_token: str = "<UNK>",
+        pad_token: str = "<pad>",
+        unk_token: str = "<unk>",
     ):
         self.vocab_size = vocab_size
         self.k = k
         self.pad_token = pad_token
         self.unk_token = unk_token
+        self.token_to_id = {}
+    
+    @classmethod
+    def from_pretrained(cls, path: str) -> "DNATokenizer":
+        """
+        Load the tokenizer from the files.
+
+        :param path: path to the tokenizer file
+
+        :return: tokenizer
+        """
+        # read in the mers
+        with open(path, "r") as f:
+            mers = f.read().splitlines()
+
+        # initialize the tokenizer
+        vocab_size = len(mers)
+        k = len(mers[0])
+        tokenizer = cls(vocab_size, k)
+        tokenizer.token_to_id = {mer: i for i, mer in enumerate(mers)}
+
+        return tokenizer
+
 
     def tokenize(self, sequence: str) -> list[int]:
         """
