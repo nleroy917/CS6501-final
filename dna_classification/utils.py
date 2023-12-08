@@ -1,6 +1,19 @@
 import torch
 from torch.utils.data import Dataset
+from torch.nn.utils.rnn import pad_packed_sequence
 
+
+def collate_fn(
+    batch: list[tuple[torch.Tensor, torch.Tensor]], pad_token_id: int
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Collate function for the dataset.
+
+    :param batch: batch of data
+    """
+    seqs, labels = zip(*batch)
+    seqs = pad_packed_sequence(seqs, padding_value=pad_token_id)
+    return seqs, torch.tensor(labels)
 
 def build_vocab(path: str, k: int = 1) -> dict:
     """
