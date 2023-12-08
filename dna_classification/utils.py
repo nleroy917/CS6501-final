@@ -2,22 +2,33 @@ import torch
 import pandas as pd
 
 from torch.utils.data import Dataset
-from torch.nn.utils.rnn import pad_packed_sequence
+from torch.nn.utils.rnn import pad_sequence
 
 from .const import DATA_FILE_DELIMITER
 
 
-def collate_fn(
-    batch: list[tuple[torch.Tensor, torch.Tensor]], pad_token_id: int
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """
-    Collate function for the dataset.
+class CollateFunction:
+    def __init__(self, pad_token_id: int):
+        """
+        Initialize the collate function.
 
-    :param batch: batch of data
-    """
-    seqs, labels = zip(*batch)
-    seqs = pad_packed_sequence(seqs, padding_value=pad_token_id)
-    return seqs, torch.tensor(labels)
+        :param pad_token_id: padding token id
+        """
+        self.pad_token_id = pad_token_id
+
+    def __call__(
+        self, batch: list[tuple[torch.Tensor, torch.Tensor]]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Collate function for the dataset.
+
+        :param batch: batch of data
+        """
+        seqs, labels = zip(*batch)
+
+        seqs = pad_sequence(seqs, batch_first=True, padding_value=self.pad_token_id)
+        return seqs, torch.tensor(labels)
+
 
 def build_vocab(path: str, k: int = 1) -> dict:
     """

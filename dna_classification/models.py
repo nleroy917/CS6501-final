@@ -22,7 +22,7 @@ from .const import (
     DEFAULT_LR,
     DEFAULT_NUM_EPOCHS,
 )
-from .utils import DNASequenceDataset
+from .utils import DNASequenceDataset, CollateFunction
 
 
 class DNASequenceClassifier(nn.Module):
@@ -39,15 +39,17 @@ class DNASequenceClassifier(nn.Module):
     ):
         super(DNASequenceClassifier, self).__init__()
         # check for completely blank init
-        if all([
-            model_path is None,
-            tokenizer is None,
-            vocab_size is None,
-            embedding_dim is None,
-            hidden_dim is None,
-            num_layers is None,
-            num_classes is None,
-        ]):
+        if all(
+            [
+                model_path is None,
+                tokenizer is None,
+                vocab_size is None,
+                embedding_dim is None,
+                hidden_dim is None,
+                num_layers is None,
+                num_classes is None,
+            ]
+        ):
             pass
         elif model_path is not None:
             if os.path.exists(model_path):
@@ -172,13 +174,15 @@ class DNASequenceClassifier(nn.Module):
         self.fc = nn.Linear(hidden_dim, num_classes)
         self.dropout = nn.Dropout(dropout)
 
-    def train(
+    def train_model(
         self,
         data: pd.DataFrame,
-        device: torch.device,
+        device: torch.device = torch.device("cpu"),
         epochs: int = DEFAULT_NUM_EPOCHS,
         batch_size: int = DEFAULT_BATCH_SIZE,
-        optimizer_params: dict = {},
+        optimizer_params: dict = {
+            "lr": DEFAULT_LR,
+        },
         seed: int = 42,
     ):
         """
@@ -207,34 +211,45 @@ class DNASequenceClassifier(nn.Module):
             tokenized_data, labels, test_size=0.2, random_state=seed
         )
 
+        # convert labels to ids
+        label_to_id = {label: id for id, label in self.label_map.items()}
+        y_train = [label_to_id[label] for label in y_train]
+        y_test = [label_to_id[label] for label in y_test]
+
         # create datasets
         train_dataset = DNASequenceDataset(x_train, y_train)
         test_dataset = DNASequenceDataset(x_test, y_test)
 
+        collate_fn = CollateFunction(self.tokenizer.pad_token_id)
+
         # create dataloaders
         train_dataloader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True
+            train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
         )
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+        test_dataloader = DataLoader(
+            test_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
+        )
 
         # create loss function
         criterion = LOSS_FN()
 
         # create optimizer
-        optimizer = OPTIMIZER(self.parameters(), lr=DEFAULT_LR, **optimizer_params)
+        optimizer = OPTIMIZER(self.parameters(), **optimizer_params)
 
         self.train()
         self.to(device)
 
         train_losses = []
         validation_losses = []
-        
-        for epoch in tqdm(epochs, total=epochs, desc="Epochs"):
-            total_loss = 0
 
-            for batch in train_dataloader:
+        for epoch in tqdm(range(epochs), total=epochs, desc="Epochs"):
+            total_loss = 0
+            self.train()
+            for batch in tqdm(
+                train_dataloader, total=len(train_dataloader), desc="Batches"
+            ):
                 inputs, labels = batch
-                
+
                 # move to device
                 inputs = inputs.to(device)
                 labels = labels.to(device)
@@ -243,17 +258,18 @@ class DNASequenceClassifier(nn.Module):
                 optimizer.zero_grad()
 
                 # forward + backward + optimize
-                outputs = self.model(inputs)
+                outputs = self(inputs)
                 loss = criterion(outputs, labels)
                 loss.backward()
-                
+
                 total_loss += loss.item()
                 optimizer.step()
-            
+
             train_losses.append(total_loss / len(train_dataloader))
 
             # validation
             with torch.no_grad():
+                self.eval()
                 total_loss = 0
                 for batch in test_dataloader:
                     inputs, labels = batch
@@ -262,19 +278,17 @@ class DNASequenceClassifier(nn.Module):
                     inputs = inputs.to(device)
                     labels = labels.to(device)
 
-                    outputs = self.model(inputs)
+                    outputs = self(inputs)
                     loss = criterion(outputs, labels)
                     total_loss += loss.item()
-                    
+
                 validation_losses.append(total_loss / len(test_dataloader))
-            
+
             print(f"Epoch {epoch} complete.")
             print(f"Training loss: {train_losses[-1]}")
             print(f"Validation loss: {validation_losses[-1]}")
-            
-        return train_losses, validation_losses
-            
 
+        return train_losses, validation_losses
 
     def export(self, path: str):
         """
@@ -303,7 +317,7 @@ class DNASequenceClassifier(nn.Module):
         # export vocab words
         with open(os.path.join(path, VOCAB_FILE), "w") as f:
             f.write("\n".join(self.tokenizer.token_to_id.keys()))
-            
+
         with open(os.path.join(path, CONFIG_FILE), "w") as f:
             safe_dump(config, f)
 
@@ -319,7 +333,7 @@ class DNASequenceClassifier(nn.Module):
             raise ValueError(
                 "Tokenizer is not initialized. Please initialize it with add_tokenizer() or load a pretrained model."
             )
-        
+
         tokens = self.tokenizer.tokenize(sequence)
         tokens = torch.tensor(tokens).unsqueeze(0)
         prediction = self(tokens)
@@ -327,6 +341,3 @@ class DNASequenceClassifier(nn.Module):
         prediction = self.label_map[prediction]
 
         return prediction
-
-
-

@@ -2,6 +2,7 @@ from typing import Union
 
 from .const import PAD_TOKEN
 
+
 class DNATokenizer:
     def __init__(
         self,
@@ -12,8 +13,10 @@ class DNATokenizer:
 
         :param vocab: vocabulary file or dictionary
         """
+        self.pad_token = PAD_TOKEN
+        self.pad_token_id = None
         self._init_tokenizer(vocab)
-    
+
     def _init_tokenizer(self, vocab: Union[str, dict[str, int]]):
         """
         Initialize the tokenizer.
@@ -21,23 +24,24 @@ class DNATokenizer:
         :param vocab: vocabulary file or dictionary
         """
         if vocab is None:
-            return # do nothing
+            return  # do nothing
         elif isinstance(vocab, str):
             with open(vocab, "r") as f:
                 vocab = f.read().splitlines()
             vocab = {mer: i for i, mer in enumerate(vocab)}
         elif isinstance(vocab, dict):
             vocab = vocab
-        
+
         # add the pad token if it's not in the vocab
         if PAD_TOKEN not in vocab:
             vocab[PAD_TOKEN] = len(vocab)
 
         self.token_to_id = vocab
+        self.pad_token_id = vocab[PAD_TOKEN]
         self.vocab_size = len(vocab)
         self.k = len(list(vocab.keys())[0])
-    
-    def build_vocab(self, path: str, k: int):
+
+    def build_vocab(self, path: str, k: int = 1):
         """
         Reads DNA sequences from a file and constructs
         a k-mer vocabulary using the specified k value.
@@ -51,7 +55,7 @@ class DNATokenizer:
                 vocab.update(kmers)
 
         vocab = {mer: i for i, mer in enumerate(vocab)}
-        
+
         self._init_tokenizer(vocab)
 
     @classmethod
@@ -66,14 +70,13 @@ class DNATokenizer:
         # read in the mers
         with open(path, "r") as f:
             mers = f.read().splitlines()
-        
+
         # create the vocab
         vocab = {mer: i for i, mer in enumerate(mers)}
 
         tokenizer = cls(vocab)
-        
+
         return tokenizer
-        
 
     def tokenize(self, sequence: str) -> list[int]:
         """
@@ -107,9 +110,9 @@ class DNATokenizer:
             max_len = max(max_len, len(sequence))
             tokenized_sequences.append(self.tokenize(sequence))
 
-        for i, sequence in enumerate(tokenized_sequences):
-            tokenized_sequences[i] = sequence + self.token_to_id[self.pad_token] * (
-                max_len - len(sequence)
-            )
+        # for i, sequence in enumerate(tokenized_sequences):
+        #     tokenized_sequences[i] = sequence + self.token_to_id[self.pad_token] * (
+        #         max_len - len(sequence)
+        #     )
 
         return tokenized_sequences
