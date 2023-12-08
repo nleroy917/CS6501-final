@@ -1,6 +1,6 @@
 import torch
 
-CHECKPOINT_FILE = "checkpoint.pth"
+CHECKPOINT_FILE = "checkpoint.pt"
 VOCAB_FILE = "vocab.txt"
 CONFIG_FILE = "config.yaml"
 

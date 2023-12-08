@@ -37,7 +37,18 @@ class DNASequenceClassifier(nn.Module):
         dropout: float = 0.5,
     ):
         super(DNASequenceClassifier, self).__init__()
-        if model_path is not None:
+        # check for completely blank init
+        if all([
+            model_path is None,
+            tokenizer is None,
+            vocab_size is None,
+            embedding_dim is None,
+            hidden_dim is None,
+            num_layers is None,
+            num_classes is None,
+        ]):
+            pass
+        elif model_path is not None:
             if os.path.exists(model_path):
                 self._load_local_model(
                     model_path, CHECKPOINT_FILE, VOCAB_FILE, CONFIG_FILE
@@ -102,14 +113,10 @@ class DNASequenceClassifier(nn.Module):
 
     def _load_local_model(
         self,
-        path: str,
-        checkpoint_file: str = CHECKPOINT_FILE,
-        vocab_file: str = VOCAB_FILE,
-        config_file: str = CONFIG_FILE,
+        checkpoint_file_path: str = CHECKPOINT_FILE,
+        vocab_file_path: str = VOCAB_FILE,
+        config_file_path: str = CONFIG_FILE,
     ):
-        checkpoint_file_path = os.path.join(path, checkpoint_file)
-        vocab_file_path = os.path.join(path, vocab_file)
-        config_file_path = os.path.join(path, config_file)
 
         # load config yaml
         with open(config_file_path, "r") as f:
@@ -127,7 +134,12 @@ class DNASequenceClassifier(nn.Module):
         )
 
         # load label map - this is needed for prediction
-        self.label_map = config["label_map"]
+        try:
+            self.label_map = config["label_map"]
+        except KeyError:
+            raise KeyError(
+                "Label map not found in config file. Please make sure you have a label map in your config file."
+            )
 
         # load model weights
         self.load_state_dict(torch.load(checkpoint_file_path))
@@ -213,35 +225,44 @@ class DNASequenceClassifier(nn.Module):
         self.model.train()
         self.model.to(device)
 
-        for epoch in range(num_epochs):
-            logs = {}
-            total_loss = 0
+        # for epoch in range(num_epochs):
+        #     logs = {}
+        #     total_loss = 0
 
-            for batch in dataloader:
-                batch = batch.to(device)
-                inputs = batch[:, :-1]
-                targets = batch[:, 1:]
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                outputs = outputs.transpose(1, 2)
-                outputs = outputs[:, :, : targets.size(1)]
+        #     for batch in dataloader:
+        #         batch = batch.to(device)
+        #         inputs = batch[:, :-1]
+        #         targets = batch[:, 1:]
+        #         optimizer.zero_grad()
+        #         outputs = model(inputs)
+        #         outputs = outputs.transpose(1, 2)
+        #         outputs = outputs[:, :, : targets.size(1)]
 
-                loss = criterion(outputs, targets)
-                loss.backward()
-                optimizer.step()
+        #         loss = criterion(outputs, targets)
+        #         loss.backward()
+        #         optimizer.step()
 
-                total_loss += loss.item()
+        #         total_loss += loss.item()
 
-            logs["loss"] = total_loss / len(dataloader)
-            logs["perplexity"] = math.exp(logs["loss"])
-            plotlosses.update(logs)
-            plotlosses.send()
+        #     logs["loss"] = total_loss / len(dataloader)
+        #     logs["perplexity"] = math.exp(logs["loss"])
+        #     plotlosses.update(logs)
+        #     plotlosses.send()
 
-        average_loss = total_loss / len(dataloader)
-        final_perp = math.exp(average_loss)
-        return final_perp
+        # average_loss = total_loss / len(dataloader)
+        # final_perp = math.exp(average_loss)
+        # return final_perp
 
     def export(self, path: str):
+        """
+        Export the model to the given path. This wil output
+        the model weights, config, and vocab.
+
+        :param str path: path to export the model to
+        """
+        if not os.path.exists(path):
+            os.makedirs(path)
+
         # save model
         torch.save(self.state_dict(), os.path.join(path, CHECKPOINT_FILE))
 
@@ -252,9 +273,14 @@ class DNASequenceClassifier(nn.Module):
             "hidden_dim": self.hidden_dim,
             "num_layers": self.num_layers,
             "num_classes": self.num_classes,
-            "dropout": self.dropout,
+            "dropout": self.dropout.p,
             "label_map": self.label_map,
         }
+
+        # export vocab words
+        with open(os.path.join(path, VOCAB_FILE), "w") as f:
+            f.write("\n".join(self.tokenizer.token_to_id.keys()))
+            
         with open(os.path.join(path, CONFIG_FILE), "w") as f:
             safe_dump(config, f)
 
