@@ -126,6 +126,9 @@ class DNASequenceClassifier(nn.Module):
             config["dropout"],
         )
 
+        # load label map - this is needed for prediction
+        self.label_map = config["label_map"]
+
         # load model weights
         self.load_state_dict(torch.load(checkpoint_file_path))
 
@@ -183,6 +186,9 @@ class DNASequenceClassifier(nn.Module):
 
         tokenized_data = self.tokenizer.tokenize_batch(data["sequence"].tolist())
         labels = data["label"].tolist()
+
+        # map id to label
+        self.label_map = {i: label for i, label in enumerate(set(labels))}
 
         x_train, x_test, y_train, y_test = train_test_split(
             tokenized_data, labels, test_size=0.2, random_state=seed
@@ -247,6 +253,31 @@ class DNASequenceClassifier(nn.Module):
             "num_layers": self.num_layers,
             "num_classes": self.num_classes,
             "dropout": self.dropout,
+            "label_map": self.label_map,
         }
         with open(os.path.join(path, CONFIG_FILE), "w") as f:
             safe_dump(config, f)
+
+    def predict(self, sequence: str) -> int:
+        """
+        Predict the label of the DNA sequence.
+
+        :param str sequence: DNA sequence
+
+        :return: predicted label
+        """
+        if self.tokenizer is None:
+            raise ValueError(
+                "Tokenizer is not initialized. Please initialize it with add_tokenizer() or load a pretrained model."
+            )
+        
+        tokens = self.tokenizer.tokenize(sequence)
+        tokens = torch.tensor(tokens).unsqueeze(0)
+        prediction = self(tokens)
+        prediction = prediction.argmax(dim=1).item()
+        prediction = self.label_map[prediction]
+
+        return prediction
+
+
+

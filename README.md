@@ -23,4 +23,5 @@ model = DNASequenceClassifier("nleroy917/cs6501-final-project")
 
 seq = "ATGTGTACAGTCGA"
 label = model.predict(seq)
+print(label) # GPCR
 ```
