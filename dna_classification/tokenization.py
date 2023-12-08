@@ -33,7 +33,7 @@ class DNATokenizer:
 
         return tokenizer
 
-    def tokenize(self, sequence: str) -> list[int]:
+    def tokenize(self, sequence: str ) -> list[int]:
         """
         Tokenize the DNA sequence.
 
@@ -41,7 +41,15 @@ class DNATokenizer:
 
         :return: list of tokens
         """
-        pass
+        # don't know how token_to_id is made
+        ids = []
+        for i in range(len(sequence) - self.k + 1):
+            token = sequence[i:i+self.k]
+            ids.append(self.token_to_id[token])
+        
+        return ids
+
+
 
     def tokenize_batch(self, batch: list[str]) -> list[list[int]]:
         """
@@ -53,4 +61,13 @@ class DNATokenizer:
 
         :return: list of tokenized sequences
         """
-        pass
+        tokenized_sequences = []
+        max_len = 0
+        for sequence in batch:
+            max_len = max(max_len, len(sequence))
+            tokenized_sequences.append(self.tokenize(sequence))
+
+        for i, sequence in enumerate(tokenized_sequences):
+            tokenized_sequences[i] = sequence + self.token_to_id[self.pad_token]*(max_len - len(sequence))
+
+        return tokenized_sequences
