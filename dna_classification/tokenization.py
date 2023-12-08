@@ -5,7 +5,7 @@ from .const import PAD_TOKEN
 class DNATokenizer:
     def __init__(
         self,
-        vocab: Union[str, dict[str, int]],
+        vocab: Union[str, dict[str, int]] = None,
     ):
         """
         Initialize the tokenizer.
@@ -20,7 +20,9 @@ class DNATokenizer:
 
         :param vocab: vocabulary file or dictionary
         """
-        if isinstance(vocab, str):
+        if vocab is None:
+            return # do nothing
+        elif isinstance(vocab, str):
             with open(vocab, "r") as f:
                 vocab = f.read().splitlines()
             vocab = {mer: i for i, mer in enumerate(vocab)}
@@ -34,8 +36,8 @@ class DNATokenizer:
         self.token_to_id = vocab
         self.vocab_size = len(vocab)
         self.k = len(list(vocab.keys())[0])
-
-    def build_vocab(path: str, k: int):
+    
+    def build_vocab(self, path: str, k: int):
         """
         Reads DNA sequences from a file and constructs
         a k-mer vocabulary using the specified k value.
@@ -47,7 +49,10 @@ class DNATokenizer:
                 sequence = line.split("\t")[0].strip()
                 kmers = [sequence[i : i + k] for i in range(len(sequence) - k + 1)]
                 vocab.update(kmers)
-        return vocab
+
+        vocab = {mer: i for i, mer in enumerate(vocab)}
+        
+        self._init_tokenizer(vocab)
 
     @classmethod
     def from_pretrained(cls, path: str) -> "DNATokenizer":

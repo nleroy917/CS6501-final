@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import pandas as pd
 
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from huggingface_hub import hf_hub_download
 from sklearn.model_selection import train_test_split
@@ -222,40 +223,62 @@ class DNASequenceClassifier(nn.Module):
         # create optimizer
         optimizer = OPTIMIZER(self.parameters(), lr=DEFAULT_LR, **optimizer_params)
 
-        self.model.train()
-        self.model.to(device)
+        self.train()
+        self.to(device)
 
-        # for epoch in range(num_epochs):
-        #     logs = {}
-        #     total_loss = 0
+        train_losses = []
+        validation_losses = []
+        
+        for epoch in tqdm(epochs, total=epochs, desc="Epochs"):
+            total_loss = 0
 
-        #     for batch in dataloader:
-        #         batch = batch.to(device)
-        #         inputs = batch[:, :-1]
-        #         targets = batch[:, 1:]
-        #         optimizer.zero_grad()
-        #         outputs = model(inputs)
-        #         outputs = outputs.transpose(1, 2)
-        #         outputs = outputs[:, :, : targets.size(1)]
+            for batch in train_dataloader:
+                inputs, labels = batch
+                
+                # move to device
+                inputs = inputs.to(device)
+                labels = labels.to(device)
 
-        #         loss = criterion(outputs, targets)
-        #         loss.backward()
-        #         optimizer.step()
+                # zero the parameter gradients
+                optimizer.zero_grad()
 
-        #         total_loss += loss.item()
+                # forward + backward + optimize
+                outputs = self.model(inputs)
+                loss = criterion(outputs, labels)
+                loss.backward()
+                
+                total_loss += loss.item()
+                optimizer.step()
+            
+            train_losses.append(total_loss / len(train_dataloader))
 
-        #     logs["loss"] = total_loss / len(dataloader)
-        #     logs["perplexity"] = math.exp(logs["loss"])
-        #     plotlosses.update(logs)
-        #     plotlosses.send()
+            # validation
+            with torch.no_grad():
+                total_loss = 0
+                for batch in test_dataloader:
+                    inputs, labels = batch
 
-        # average_loss = total_loss / len(dataloader)
-        # final_perp = math.exp(average_loss)
-        # return final_perp
+                    # move to device
+                    inputs = inputs.to(device)
+                    labels = labels.to(device)
+
+                    outputs = self.model(inputs)
+                    loss = criterion(outputs, labels)
+                    total_loss += loss.item()
+                    
+                validation_losses.append(total_loss / len(test_dataloader))
+            
+            print(f"Epoch {epoch} complete.")
+            print(f"Training loss: {train_losses[-1]}")
+            print(f"Validation loss: {validation_losses[-1]}")
+            
+        return train_losses, validation_losses
+            
+
 
     def export(self, path: str):
         """
-        Export the model to the given path. This wil output
+        Export the model to the given path. This will output
         the model weights, config, and vocab.
 
         :param str path: path to export the model to
