@@ -35,6 +35,20 @@ class DNATokenizer:
         self.vocab_size = len(vocab)
         self.k = len(list(vocab.keys())[0])
 
+    def build_vocab(path: str, k: int):
+        """
+        Reads DNA sequences from a file and constructs
+        a k-mer vocabulary using the specified k value.
+        """
+        vocab = set()
+        with open(path, "r") as file:
+            next(file)  # skip the first line
+            for line in file:
+                sequence = line.split("\t")[0].strip()
+                kmers = [sequence[i : i + k] for i in range(len(sequence) - k + 1)]
+                vocab.update(kmers)
+        return vocab
+
     @classmethod
     def from_pretrained(cls, path: str) -> "DNATokenizer":
         """
@@ -56,7 +70,7 @@ class DNATokenizer:
         return tokenizer
         
 
-    def tokenize(self, sequence: str ) -> list[int]:
+    def tokenize(self, sequence: str) -> list[int]:
         """
         Tokenize the DNA sequence.
 
@@ -67,11 +81,10 @@ class DNATokenizer:
         # don't know how token_to_id is made
         ids = []
         for i in range(len(sequence) - self.k + 1):
-            token = sequence[i:i+self.k]
+            token = sequence[i : i + self.k]
             ids.append(self.token_to_id[token])
-        
-        return ids
 
+        return ids
 
     def tokenize_batch(self, batch: list[str]) -> list[list[int]]:
         """
@@ -90,6 +103,8 @@ class DNATokenizer:
             tokenized_sequences.append(self.tokenize(sequence))
 
         for i, sequence in enumerate(tokenized_sequences):
-            tokenized_sequences[i] = sequence + self.token_to_id[self.pad_token]*(max_len - len(sequence))
+            tokenized_sequences[i] = sequence + self.token_to_id[self.pad_token] * (
+                max_len - len(sequence)
+            )
 
         return tokenized_sequences
