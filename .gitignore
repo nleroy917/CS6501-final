@@ -161,3 +161,4 @@ cython_debug/
 data/chimpanzee.txt
 data/human.txt
 data/dog.txt
+tests/data/model
