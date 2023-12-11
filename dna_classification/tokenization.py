@@ -1,5 +1,7 @@
 from typing import Union
 
+from tqdm import tqdm
+
 from .const import PAD_TOKEN
 
 
@@ -49,12 +51,12 @@ class DNATokenizer:
         vocab = set()
         with open(path, "r") as file:
             next(file)  # skip the first line
-            for line in file:
+            for line in tqdm(file, desc="Building vocab"):
                 sequence = line.split("\t")[0].strip()
                 kmers = [sequence[i : i + k] for i in range(len(sequence) - k + 1)]
                 vocab.update(kmers)
 
-        vocab = {mer: i for i, mer in enumerate(vocab)}
+        vocab = {mer: i for i, mer in tqdm(enumerate(vocab), total=len(vocab))}
 
         self._init_tokenizer(vocab)
 

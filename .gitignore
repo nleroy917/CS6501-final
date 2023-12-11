@@ -164,4 +164,7 @@ data/dog.txt
 data/flu.txt
 data/fluA.fasta
 data/fluB.fasta
+data/flu.fasta
+data/covid.fasta
+data/virus.txt
 tests/data/model

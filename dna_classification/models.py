@@ -201,12 +201,14 @@ class DNASequenceClassifier(nn.Module):
                 "Tokenizer is not initialized. Please initialize it with add_tokenizer() or load a pretrained model."
             )
 
+        print("Tokenizing data...")
         tokenized_data = self.tokenizer.tokenize_batch(data["sequence"].tolist())
         labels = data["label"].tolist()
 
         # map id to label
         self.label_map = {i: label for i, label in enumerate(set(labels))}
 
+        print("Splitting data...")
         x_train, x_test, y_train, y_test = train_test_split(
             tokenized_data, labels, test_size=0.2, random_state=seed
         )
@@ -217,6 +219,7 @@ class DNASequenceClassifier(nn.Module):
         y_test = [label_to_id[label] for label in y_test]
 
         # create datasets
+        print("Creating datasets...")
         train_dataset = DNASequenceDataset(x_train, y_train)
         test_dataset = DNASequenceDataset(x_test, y_test)
 
@@ -242,6 +245,7 @@ class DNASequenceClassifier(nn.Module):
         train_losses = []
         validation_losses = []
 
+        print("Training...")
         for epoch in tqdm(range(epochs), total=epochs, desc="Epochs"):
             total_loss = 0
             self.train()

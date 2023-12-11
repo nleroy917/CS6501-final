@@ -5,20 +5,20 @@ from Bio import SeqIO
 random.seed(42)
 
 # get raw seqs
-with open("fluB.fasta") as f:
-    fluB = list(SeqIO.parse(f, "fasta"))
+with open("flu.fasta") as f:
+    flu = list(SeqIO.parse(f, "fasta"))
 
-with open("fluA.fasta") as f:
-    fluA = list(SeqIO.parse(f, "fasta"))
+with open("covid.fasta") as f:
+    covid = list(SeqIO.parse(f, "fasta"))
 
 # annotate, merge, shuffle, reprocess
-fluB = [(str(seq.seq), 'B') for seq in fluB]
-fluA = [(str(seq.seq), 'A') for seq in fluA]
+flu = [(str(seq.seq), 'flu') for seq in flu]
+covid = [(str(seq.seq), 'covid') for seq in covid]
 
-all_seqs = fluB + fluA
+all_seqs = flu + covid
 random.shuffle(all_seqs)
 
 # write to file
-with open("flu.txt", "w") as f:
+with open("virus.txt", "w") as f:
     for seq in all_seqs:
         _ = f.write('\t'.join(seq) + '\n')
