@@ -118,3 +118,11 @@ class DNATokenizer:
         #     )
 
         return tokenized_sequences
+
+    def tokenize_no_overlap(self, sequence: str) -> list[int]:
+        ids = []
+        for i in range(0, len(sequence) - self.k + 1, self.k):
+            token = sequence[i : i + self.k]
+            ids.append(self.token_to_id[token])
+
+        return ids
