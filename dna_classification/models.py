@@ -184,6 +184,7 @@ class DNASequenceClassifier(nn.Module):
             "lr": DEFAULT_LR,
         },
         seed: int = 42,
+        tokenize_with_overlap: bool = True,
     ):
         """
         Train the model.
@@ -202,7 +203,10 @@ class DNASequenceClassifier(nn.Module):
             )
 
         print("Tokenizing data...")
-        tokenized_data = self.tokenizer.tokenize_batch(data["sequence"].tolist())
+        if tokenize_with_overlap:
+            tokenized_data = [self.tokenizer.tokenize(seq) for seq in data["sequence"].tolist()]
+        else:
+            tokenized_data = [self.tokenizer.tokenize_no_overlap(seq) for seq in data["sequence"].tolist()]
         labels = data["label"].tolist()
 
         # map id to label
