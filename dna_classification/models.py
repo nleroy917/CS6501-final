@@ -337,6 +337,8 @@ class DNASequenceClassifier(nn.Module):
         tokens = self.tokenizer.tokenize(sequence)
         tokens = torch.tensor(tokens).unsqueeze(0)
         prediction = self(tokens)
+        # the final layer needs to be softmaxed
+        prediction = nn.functional.softmax(prediction, dim=1)
         prediction = prediction.argmax(dim=1).item()
         prediction = self.label_map[prediction]
 

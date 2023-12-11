@@ -161,4 +161,7 @@ cython_debug/
 data/chimpanzee.txt
 data/human.txt
 data/dog.txt
+data/flu.txt
+data/fluA.fasta
+data/fluB.fasta
 tests/data/model
