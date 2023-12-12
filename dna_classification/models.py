@@ -322,7 +322,7 @@ class DNASequenceClassifier(nn.Module):
             "hidden_dim": self.hidden_dim,
             "num_layers": self.num_layers,
             "num_classes": self.num_classes,
-            "dropout": self.dropout.p,
+            "dropout": self.dropout,
             "label_map": self.label_map,
         }
 
