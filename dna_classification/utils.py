@@ -43,7 +43,7 @@ def build_vocab(path: str, k: int = 1) -> dict:
 
 
 class DNASequenceDataset(Dataset):
-    def __init__(self, sequences: list[str], labels: list[int]):
+    def __init__(self, sequences: list[list[int]], labels: list[int]):
         """
         Initialize the dataset.
         """

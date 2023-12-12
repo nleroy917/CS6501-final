@@ -77,7 +77,6 @@ class DNASequenceClassifier(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.embedding(x)
         x, _ = self.lstm(x)
-        x = self.dropout(x)
         x = self.fc(x[:, -1, :])
         return x
 
@@ -172,7 +171,6 @@ class DNASequenceClassifier(nn.Module):
             embedding_dim, hidden_dim, num_layers, batch_first=True, dropout=dropout
         )
         self.fc = nn.Linear(hidden_dim, num_classes)
-        self.dropout = nn.Dropout(dropout)
 
     def train_model(
         self,
@@ -214,7 +212,7 @@ class DNASequenceClassifier(nn.Module):
 
         print("Splitting data...")
         x_train, x_test, y_train, y_test = train_test_split(
-            tokenized_data, labels, test_size=0.2, random_state=seed
+            tokenized_data, labels, test_size=0.2, random_state=seed, shuffle=True
         )
 
         # convert labels to ids

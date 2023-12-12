@@ -10,7 +10,7 @@ from dna_classification.tokenization import DNATokenizer
 @pytest.fixture
 def train_data() -> pd.DataFrame:
     return pd.read_csv(
-        "data/dog.txt", names=["sequence", "label"], skiprows=1, sep="\t"
+        "data/virus.txt", names=["sequence", "label"], skiprows=1, sep="\t"
     )
 
 
@@ -47,7 +47,7 @@ def test_export_reload_model():
         vocab_size=4, embedding_dim=384, hidden_dim=64, num_layers=2, num_classes=2
     )
 
-    tokenizer = DNATokenizer(vocab_size=4, k=1)
+    tokenizer = DNATokenizer()
     tokenizer.token_to_id = {"A": 0, "T": 1, "G": 2, "C": 3}
 
     model.add_tokenizer(tokenizer)
@@ -71,7 +71,7 @@ def test_export_reload_model():
 
 def test_train_model(train_data: pd.DataFrame):
     tokenizer = DNATokenizer()
-    tokenizer.build_vocab("data/dog.txt")
+    tokenizer.build_vocab("data/virus.txt")
 
     model = DNASequenceClassifier(
         vocab_size=tokenizer.vocab_size,
