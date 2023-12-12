@@ -248,51 +248,57 @@ class DNASequenceClassifier(nn.Module):
         validation_losses = []
 
         print("Training...")
-        for epoch in tqdm(range(epochs), total=epochs, desc="Epochs"):
-            total_loss = 0
-            self.train()
-            for batch in tqdm(
-                train_dataloader, total=len(train_dataloader), desc="Batches"
-            ):
-                inputs, labels = batch
-
-                # move to device
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-
-                # zero the parameter gradients
-                optimizer.zero_grad()
-
-                # forward + backward + optimize
-                outputs = self(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-
-                total_loss += loss.item()
-                optimizer.step()
-
-            train_losses.append(total_loss / len(train_dataloader))
-
-            # validation
-            with torch.no_grad():
-                self.eval()
+        
+        try:
+            for epoch in tqdm(range(epochs), total=epochs, desc="Epochs"):
                 total_loss = 0
-                for batch in test_dataloader:
+                self.train()
+                for batch in tqdm(
+                    train_dataloader, total=len(train_dataloader), desc="Batches"
+                ):
                     inputs, labels = batch
 
                     # move to device
                     inputs = inputs.to(device)
                     labels = labels.to(device)
 
+                    # zero the parameter gradients
+                    optimizer.zero_grad()
+
+                    # forward + backward + optimize
                     outputs = self(inputs)
                     loss = criterion(outputs, labels)
+                    loss.backward()
+
                     total_loss += loss.item()
+                    optimizer.step()
 
-                validation_losses.append(total_loss / len(test_dataloader))
+                train_losses.append(total_loss / len(train_dataloader))
 
-            print(f"Epoch {epoch} complete.")
-            print(f"Training loss: {train_losses[-1]}")
-            print(f"Validation loss: {validation_losses[-1]}")
+                # validation
+                with torch.no_grad():
+                    self.eval()
+                    total_loss = 0
+                    for batch in test_dataloader:
+                        inputs, labels = batch
+
+                        # move to device
+                        inputs = inputs.to(device)
+                        labels = labels.to(device)
+
+                        outputs = self(inputs)
+                        loss = criterion(outputs, labels)
+                        total_loss += loss.item()
+
+                    validation_losses.append(total_loss / len(test_dataloader))
+
+                print(f"Epoch {epoch} complete.")
+                print(f"Training loss: {train_losses[-1]}")
+                print(f"Validation loss: {validation_losses[-1]}")
+
+        except KeyboardInterrupt:
+            print("Training interrupted.")
+            return train_losses, validation_losses
 
         return train_losses, validation_losses
 
