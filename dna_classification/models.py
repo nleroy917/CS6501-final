@@ -58,8 +58,7 @@ class DNASequenceClassifier(nn.Module):
                 )
             else:
                 self._init_from_huggingface(model_path)
-                # TODO: init tokenizer when loading from huggingface or local
-            self.tokenizer = None
+            
         else:
             self._init_model(
                 tokenizer,
@@ -144,7 +143,10 @@ class DNASequenceClassifier(nn.Module):
             )
 
         # load model weights
-        self.load_state_dict(torch.load(checkpoint_file_path))
+        self.load_state_dict(torch.load(checkpoint_file_path, map_location="cpu"))
+
+        # tokenizer
+        self.tokenizer = DNATokenizer.from_pretrained(vocab_file_path)
 
     def _init_model(
         self,
